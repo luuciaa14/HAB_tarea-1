@@ -1,0 +1,4 @@
+query_in	symbol	name	entrezgene	ensembl_gene	taxid	notfound
+COX4I2		cytochrome c oxidase subunit 4I2	84701		9606	
+MT-ND1		NADH dehydrogenase subunit 1	4535		9606	
+MT-ATP6		ATP synthase F0 subunit 6	4508		9606	

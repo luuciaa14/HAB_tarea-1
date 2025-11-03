@@ -5,6 +5,8 @@ from typing import List
 
 import pandas as pd
 
+import mygene
+
 # Sinónimos de genes mitocondriales habituales:
 MITO_SYNONYMS = {
     "ND1": "MT-ND1",
@@ -41,20 +43,62 @@ def read_gene_list(path: str) -> List[str]:
 
 # Normalización heurística para genes habituales
 def heuristics_fix_mito_symbols(genes: List[str]) -> List[str]:
-    """
-    Aplica normalización heurística para símbolos mitocondriales comunes.
-    Si el símbolo no está en el diccionario, se deja tal cual.
-    """
     fixed = []
     for g in genes:
         fixed.append(MITO_SYNONYMS.get(g.upper(), g))
     return fixed
 
+# Función de mapeo
+def map_genes_with_mygene(genes: List[str]) -> pd.DataFrame:
+    mg = mygene.MyGeneInfo()
+    try:
+        df = mg.querymany(
+            genes,
+            scopes = "symbol,alias,names",
+            fields = "symbols,name,entrezgene,ensembl.gene,taxid",
+            species = "human",
+            as_dataframe = True,
+            returnall = False,
+            verbose = False,
+        )
+    except Exception as e:
+        print(f"[ERROR] Fallo consultando MyGene.info: {e}", file = sys.stderr)
+        return pd.DataFrame()
+    
+    # Si viene vacío
+    if df is None or df.empty:
+        return pd.DataFrame()
+    
+    # Pasamos a un mejor formato
+    df = df.reset_index().rename(columns={"query": "query_in"})
+
+    def _extract_ensembl(val):
+        if isinstance(val, dict) and "gene" in val:
+            return val["gene"]
+        if isinstance(val, list) and len(val) > 0:
+            first = val[0]
+            if isinstance(first, dict) and "gene" in first:
+                return first["gene"]
+        return None
+    
+    if "ensembl" in df.columns:
+        df["ensembl_gene"] = df["ensembl"].apply(_extract_ensembl)
+    else:
+        df["ensembl_gene"] = None
+
+    # Columnas clave
+    wanted = ["query_in", "symbol", "name", "entrezgene", "ensembl_gene", "taxid", "notfound"]
+    for col in wanted:
+        if col not in df.columns:
+            df[col] = None
+    df = df[wanted].drop_duplicates()
+    return df
+
 def main():
     # Definición de argumentos
     # Archivo de entrada y prefijo de salida
     parser = argparse.ArgumentParser(
-        description= "Preprocesado de genes: lectura + normalización mitocondrial."
+        description= "Preprocesado de genes: lectura + normalización mitocondrial + mapeo con MyGene.info."
     )
     parser.add_argument("-i", "--input", required=True, help="Ruta al archivo de genes.")
     parser.add_argument("-o", "--output", required=True, help="Prefijo de salida, p. ej. results/analisis_cox_nd1_atp6.")
@@ -77,10 +121,7 @@ def main():
     try:
         genes_raw = read_gene_list(input_path)
     except FileNotFoundError:
-        print(f"[ERROR] No se encuentra el archivo de entrada: {args.input}", file=sys.stderr)
-        sys.exit(1)
-    except Exception as e:
-        print(f"[ERROR] Fallo leyendo el archivo de entrada: {e}", file=sys.stderr)
+        print(f"[ERROR] No se encuentra el archivo de entrada: {input_path}", file=sys.stderr)
         sys.exit(1)
 
     # Archivo vacío o sin genes válidos
@@ -92,18 +133,22 @@ def main():
     genes_fixed = heuristics_fix_mito_symbols(genes_raw)
 
     # 3. Guardar resultados en un .tsv    
-    out_clean = f"{out_prefix}_genes_clean.tsv"
-    try:
-        df = pd.DataFrame({"gene_input": genes_raw, "gene_normalized": genes_fixed})
-        df.to_csv(out_clean, sep="\t", index=False)
-    except Exception as e:
-        print(f"[ERROR] No pude escribir el TSV de salida: {e}", file=sys.stderr)
-        sys.exit(1)
+    clean_path = f"{out_prefix}_genes_clean.tsv"
+    df_clean = pd.DataFrame({"gene_input": genes_raw, "gene_normalized": genes_fixed})
+    df_clean.to_csv(clean_path, sep="\t", index=False)
+    print(f"[OK] Guardado preprocesado en: {clean_path}")
 
-    # 4. Mensaje final informativo
-    print("Preprocesamiento completado.")
-    print(f"- Entrada: {args.input}")
-    print(f"- Salida (genes normalizados): {out_clean}")
+    # 4. Mapeo con MyGene.info
+    mapping_df = map_genes_with_mygene(genes_fixed)
+
+    if mapping_df is None or mapping_df.empty:
+        print("[WARN] No se obtuvieron resultados de mapeo. Revisa los nombres de los genes o la conexión.")
+    else:
+        mapping_path = f"{out_prefix}_mapping.tsv"
+        mapping_df.to_csv(mapping_path, sep="\t", index=False)
+        print(f"[OK] Guardado mapeo en: {mapping_path}")
+
+    print("[OK] Etapa v0.2 completada.")
 
 if __name__ == "__main__":
     main()
