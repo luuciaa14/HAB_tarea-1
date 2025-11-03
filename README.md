@@ -49,3 +49,23 @@ Ejemplo contenido:
 COX4I2 | COX4I2
 ND1 | MT-ND1
 ATP6 | MT-ATP6
+
+## Mapeo de genes con MyGene.info
+
+Para poder hacer un análisis funcional es muy útil trabajar con identificadores estables y no solo con el símbolo que escribe el usuario. Algunos símbolos pueden tener sinónimos, mayúsculas/minúsculas o formas "no estándar" (como los genes mitocondriales).
+
+En esta segunda etapa del script, después de normalizar los genes, consulta el servicio público MyGene.info usando la librería `mygene`y obtiene, para cada gen:
+
+* Símbolo oficial (`symbol`)
+* Nombre del gen (`gen`)
+* Identificador Entrez (`entrezgene`)
+* Identificador Ensembl (`ensembl_gene`)
+* Si el gen no se pudo mapear
+
+El resultado se guarda en una rchivo TSV llamado, por ejemplo:
+
+```
+results/analisis_cox_nd1_atp6_mapping.tsv
+```
+
+Este archivo será la base para las etapas de enriquecimiento funcional.
