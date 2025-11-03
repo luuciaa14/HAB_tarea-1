@@ -35,7 +35,8 @@ def read_gene_list(path: str) -> List[str]:
             s = line.strip()
             if not s or s.startswith("#"):
                 continue
-            genes.append(s)
+            parts = [g.strip() for g in s.replace(",", " ").split() if g.strip()]
+            genes.extend(parts)
     return genes
 
 # Normalización heurística para genes habituales
