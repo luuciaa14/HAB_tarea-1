@@ -56,46 +56,53 @@ def main():
         description= "Preprocesado de genes: lectura + normalización mitocondrial."
     )
     parser.add_argument("-i", "--input", required=True, help="Ruta al archivo de genes.")
-    parser.add_argument("-o", "--output", required=True, help="Prefijo de slaida, p. ej. results/analisis_cox_nd1_atp6.")
+    parser.add_argument("-o", "--output", required=True, help="Prefijo de salida, p. ej. results/analisis_cox_nd1_atp6.")
     
     # Procesamiento de argumentos
     args = parser.parse_args()
 
-    # Preparar la ruta de salida
-    out_prefix = args.output
+    input_path = os.path.abspath(args.input)
+    out_prefix = os.path.abspath(args.output)
+    out_dir = os.path.dirname(out_prefix) if os.path.dirname(out_prefix) else os.path.abspath("results")
 
-    # Si no se indica directorio, "reuslts" por defecto
-    # Si no existe directorio, se crea
-    out_dir = os.path.dirname(out_prefix) if os.path.dirname(out_prefix) else "results"
     os.makedirs(out_dir, exist_ok=True)
+    
+    print(f"[INFO] CWD: {os.getcwd()}")
+    print(f"[INFO] Input : {input_path}")
+    print(f"[INFO] Output prefix: {out_prefix}")
+    print(f"[INFO] Output dir   : {out_dir}")
 
     # 1. Leer la lista de genes del archivo de entrada
     try:
-        genes_raw = read_gene_list(args.input)
+        genes_raw = read_gene_list(input_path)
     except FileNotFoundError:
         print(f"[ERROR] No se encuentra el archivo de entrada: {args.input}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"[ERROR] Fallo leyendo el archivo de entrada: {e}", file=sys.stderr)
         sys.exit(1)
 
     # Archivo vacío o sin genes válidos
     if not genes_raw:
-        print("[ERROR] El archo de entrada no contiene genes válidos.", file=sys.stderr)
+        print("[ERROR] El archivo de entrada no contiene genes válidos.", file=sys.stderr)
         sys.exit(1)
 
     # 2. Normalización heurística de genes mitocondriales
     genes_fixed = heuristics_fix_mito_symbols(genes_raw)
 
-    # 3. Guardar resultados en un .tsv
-    df = pd.DataFrame(
-        {
-            "gene_input": genes_raw,
-            "gene_normalized": genes_fixed,
-        }
-    )
-    
-    out_clean = f"{out_prefix}_genes_clean_tsv"
-    df.to_csv(out_clean, sep="\t", index=False)
+    # 3. Guardar resultados en un .tsv    
+    out_clean = f"{out_prefix}_genes_clean.tsv"
+    try:
+        df = pd.DataFrame({"gene_input": genes_raw, "gene_normalized": genes_fixed})
+        df.to_csv(out_clean, sep="\t", index=False)
+    except Exception as e:
+        print(f"[ERROR] No pude escribir el TSV de salida: {e}", file=sys.stderr)
+        sys.exit(1)
 
     # 4. Mensaje final informativo
     print("Preprocesamiento completado.")
     print(f"- Entrada: {args.input}")
-    print(f"- Salida (gens normalizados): {out_clean}")
+    print(f"- Salida (genes normalizados): {out_clean}")
+
+if __name__ == "__main__":
+    main()
