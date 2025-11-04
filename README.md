@@ -7,7 +7,7 @@ El análisis funcional de genes es una etapa fundamental en bioinformática y bi
 
 Su objetivo principal es pasar de una lista de genes a una comprensión de los procesos biológicos, rutas metabólicas y funciones moleculares en los que esos genes participan.
 
-En definitiva, el análisis funcional transforma datos genómicos en conocimiento biológico interpretables, ayudando a contextualizar los genes dentro de las vías metabólicas, procesos fisiológicos y mecanismos moleculares del organismo.
+En definitiva, el análisis funcional transforma datos genómicos en conocimiento biológico interpretable, ayudando a contextualizar los genes dentro de las vías metabólicas, procesos fisiológicos y mecanismos moleculares del organismo.
 
 ## Contexto biológico
 
@@ -20,7 +20,7 @@ En esta tarea se analizarán tres genes mitocondriales y nucleares que están es
 
  ## Preprocesado y normalización de genes
 
- En un primer lugar, hemos hecho un script que lee y limpia la lista de genes de entrada, aplicando una normalización heurística para los genes mitocondriales más comunes.
+ En primer lugar, hemos hecho un script que lee y limpia la lista de genes de entrada, aplicando una normalización heurística para los genes mitocondriales más comunes.
 
 Para ello se han llevado a cabo los siguientes pasos:
 
@@ -42,7 +42,7 @@ Se crea el archivo:
 ```
 results/analisis_cox_nd1_atp6_genes_clean.tsv
 ```
-Ejemplo contenido:
+Ejemplo de contenido:
 
 | gene_input | gene_normalized |
 |------------|----------|
@@ -54,10 +54,10 @@ ATP6 | MT-ATP6
 
 Para poder hacer un análisis funcional es muy útil trabajar con identificadores estables y no solo con el símbolo que escribe el usuario. Algunos símbolos pueden tener sinónimos, mayúsculas/minúsculas o formas "no estándar" (como los genes mitocondriales).
 
-En esta segunda etapa del script, después de normalizar los genes, consulta el servicio público MyGene.info usando la librería `mygene`y obtiene, para cada gen:
+En esta segunda etapa del script, después de normalizar los genes, se consulta el servicio público MyGene.info usando la librería `mygene`y obtiene, para cada gen:
 
 * Símbolo oficial (`symbol`)
-* Nombre del gen (`gen`)
+* Nombre del gen (`name`)
 * Identificador Entrez (`entrezgene`)
 * Identificador Ensembl (`ensembl_gene`)
 * Si el gen no se pudo mapear
@@ -93,7 +93,7 @@ Para cada una de estas colecciones, el script:
 
 A pesar de que Enrichr suele ser suficiente, las listas de genes suelen ser cortas o alguna de las colecciones no están disponibles. Para estos casos se usa la herramienta **g:Profiler**, usando la librería `gprofiler-official`. Esta herramienta permite anotar la lista de genes frente a varias bases de datos y devuelve una tabla con los términos significativos ordenados por el valor p. 
 
-En esta estapa, el script:
+En esta etapa, el script:
 
 1. Usa la lista de símbolos ya normalizados.
 2. Llama a g:Profiler para el organismo humano.
@@ -112,6 +112,22 @@ results/analisis_cox_nd1_atp6_resumen.tsv
 ```
 
 Este resumen incluye los términos más significativos de cada fuente, ordenados por su valor p o valor p ajustado, permitiendo comparar rápidamente las categorías comunes.
+
+**Visualización del resumen:**
+
+| source	| term	| p_value |
+|-----------|-------|---------|
+| g:Profiler	| respiratory chain complex |	1.7495192096134485e-05 |					
+| g:Profiler 	| oxidative phosphorylation	| 0.00016400056416194064 |					
+| g:Profiler	| Oxidative phosphorylation	| 0.00019077901673278882 |				
+| g:Profiler	| proton transmembrane transporter activity	| 0.00025605478100053635 |				
+| g:Profiler	| proton transmembrane transport	| 0.000363191140733216 |				
+| g:Profiler	| aerobic respiration	| 0.0004175865333328184 |			
+| g:Profiler	| Diabetic cardiomyopathy	| 0.0006585331746415463 |	
+| g:Profiler	| cellular respiration	| 0.0007530184933910186 |
+| g:Profiler	| Chemical carcinogenesis - reactive oxygen species	| 0.0008634939616625755 |			
+| g:Profiler	| Thermogenesis	| 0.0009996041175237241 |	
+
 
 ## Conclusiones y referencias
 
