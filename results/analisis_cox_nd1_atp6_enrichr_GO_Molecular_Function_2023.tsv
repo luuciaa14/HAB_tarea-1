@@ -1,0 +1,5 @@
+Gene_set	term	overlap	p_value	adj_p	Old P-value	Old Adjusted P-value	odds_ratio	combined_score	overlap_genes
+GO_Molecular_Function_2023	Cytochrome-C Oxidase Activity (GO:0004129)	1/12	0.0017989757687595	0.0071916134774688	0	0	908.4545454545456	5741.921288120221	COX4I2
+GO_Molecular_Function_2023	Active Monoatomic Ion Transmembrane Transporter Activity (GO:0022853)	1/24	0.0035958067387344	0.0071916134774688	0	0	434.2173913043478	2443.7697931466887	COX4I2
+GO_Molecular_Function_2023	Proton Transmembrane Transporter Activity (GO:0015078)	1/45	0.006735078830116	0.0080784620472779	0	0	226.7386363636364	1133.7897191126328	COX4I2
+GO_Molecular_Function_2023	Oxidoreduction-Driven Active Transmembrane Transporter Activity (GO:0015453)	1/54	0.0080784620472779	0.0080784620472779	0	0	188.1509433962264	906.615436737158	COX4I2
