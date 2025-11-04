@@ -2,12 +2,10 @@ import argparse
 import os
 import sys
 from typing import List
-
 import pandas as pd
-
 import mygene
-
 from gseapy import enrichr
+from gprofiler import GProfiler
 
 #Librerias de Enrichr
 
@@ -150,6 +148,33 @@ def run_enrichr(gene_symbols: List[str], out_prefix: str) -> None:
             print(f"[WARN] Fallo al consultar {lib} en Enrichr: {e}", file=sys.stderr)
             continue
 
+def run_gprofiler(gene_symbols: List[str], out_prefix: str) -> None:
+    print("[INFO] Ejecutando enriquecimiento con g:Profiler...")
+    try:
+        gp = GProfiler(return_dataframe=True)
+        res = gp.profile(
+            organism="hsapiens",
+            query=gene_symbols,
+            user_threshold=1.0,
+            all_results=True,
+        )
+    except Exception as e:
+        print(f"[WARN] g:Profiler falló: {e}", file=sys.stderr)
+        return
+    
+    if res is None or res.empty:
+        print("[WARN] g:Profiler no devolvió resultados.")
+        return
+
+    # Ordenamos por p-valor si está
+    if "p_value" in res.columns:
+        res = res.sort_values("p_value", ascending=True)
+
+    out_path = f"{out_prefix}_gprofiler.tsv"
+    res.to_csv(out_path, sep="\t", index=False)
+    print(f"[OK] Guardado enriquecimiento g:Profiler en: {out_path}")
+
+
 def main():
     # Definición de argumentos
     # Archivo de entrada y prefijo de salida
@@ -207,7 +232,10 @@ def main():
     # 5. Enriquecimiento (usando los símbolos normalizados)
     run_enrichr(genes_fixed, out_prefix)
 
-    print("[OK] Etapa v0.3 completada.")
+    # 6. Enriquecimiento con g:Profiler
+    run_gprofiler(genes_fixed, out_prefix)
+
+    print("[OK] Etapa v0.4 completada.")
 
 if __name__ == "__main__":
     main()
