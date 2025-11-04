@@ -69,3 +69,22 @@ results/analisis_cox_nd1_atp6_mapping.tsv
 ```
 
 Este archivo será la base para las etapas de enriquecimiento funcional.
+
+## Enriquecimiento funcional (Enrichr)
+
+Una vez los genes están normalizados y mapeados queremos saber en qué procesos aparecen estos genes más de lo esperado. Para averiguarlo, utilizamos un análisis de enriquecimiento funcional. Esta es una técnica bioinformática que identifica qué procesos biológicos o funciones están sobrerrepresentados en una lista de genes, proteínas u otras moléculas.
+
+En este caso usamos **Enrichr** a través de la libería de Python `gseapy`. Enrichr es un servicio que tiene colecciones de genes ya agrupadas en categorías biológicas. Nosotros consultaremos:
+
+* `GO_Biological_Process_2023`
+* `GO_Molecular_Function_2023`
+* `GO_Cellular_Component_2023`
+* `KEGG_2021_Human`
+* `Reactome_2022`
+
+Para cada una de estas colecciones, el script:
+
+1. Envía la lista de genes.
+2. Recibe las categorías enriquecidas.
+3. Las ordena por significación.
+4. Guarda un archivo .tsv por coleccion en la carpeta `results`.
