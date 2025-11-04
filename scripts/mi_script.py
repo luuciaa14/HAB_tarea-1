@@ -104,8 +104,9 @@ def map_genes_with_mygene(genes: List[str]) -> pd.DataFrame:
     df = df[wanted].drop_duplicates()
     return df
 
-def run_enrichr(gene_symbols: List[str], out_prefix: str) -> None:
+def run_enrichr(gene_symbols: List[str], out_prefix: str) -> dict:
     print("[INFO] Ejecutando enriquecimiento con Enrichr")
+    results = {}
     for lib in ENRICHR_LIBRARIES:
         try:
             enr = enrichr(
@@ -144,11 +145,13 @@ def run_enrichr(gene_symbols: List[str], out_prefix: str) -> None:
             df_res.to_csv(out_path, sep="\t", index=False)
             print(f"[OK] Guardado enriquecimiento de {lib} en: {out_path}")
 
+            results[lib] = df_res
+
         except Exception as e:
             print(f"[WARN] Fallo al consultar {lib} en Enrichr: {e}", file=sys.stderr)
             continue
 
-def run_gprofiler(gene_symbols: List[str], out_prefix: str) -> None:
+def run_gprofiler(gene_symbols: List[str], out_prefix: str) -> pd.DataFrame:
     print("[INFO] Ejecutando enriquecimiento con g:Profiler...")
     try:
         gp = GProfiler(return_dataframe=True)
@@ -160,11 +163,11 @@ def run_gprofiler(gene_symbols: List[str], out_prefix: str) -> None:
         )
     except Exception as e:
         print(f"[WARN] g:Profiler falló: {e}", file=sys.stderr)
-        return
+        return pd.DataFrame()
     
     if res is None or res.empty:
         print("[WARN] g:Profiler no devolvió resultados.")
-        return
+        return pd.DataFrame()
 
     # Ordenamos por p-valor si está
     if "p_value" in res.columns:
@@ -173,7 +176,49 @@ def run_gprofiler(gene_symbols: List[str], out_prefix: str) -> None:
     out_path = f"{out_prefix}_gprofiler.tsv"
     res.to_csv(out_path, sep="\t", index=False)
     print(f"[OK] Guardado enriquecimiento g:Profiler en: {out_path}")
+    return res
 
+def make_summary(enrichr_results: dict, gprof_df: pd.DataFrame, out_prefix: str) -> None:
+    frames = []
+
+    if enrichr_results is None:
+        enrichr_results = {}
+
+    # De Enrichr cogemos top 10 de cada librería
+    for lib, df in enrichr_results.items():
+        if df is None or df.empty:
+            continue
+
+        top = df.head(10).copy()
+        top["source"] = f"Enrichr:{lib}"
+
+        for col in ["term", "adj_p", "p_value", "combined_score", "odds_ratio", "overlap", "overlap_genes"]:
+            if col not in top.columns:
+                top[col] = None
+
+        frames.append(top[["source", "term", "adj_p", "p_value", "combined_score", "odds_ratio", "overlap", "overlap_genes"]])
+
+    # De g:Profiler cogemos top 10 por p_value
+    if gprof_df is not None and not gprof_df.empty:
+        gtmp = gprof_df.copy()
+        gtmp["term"] = gtmp.get("term_name", gtmp.get("name", None))
+        gtmp["source"] = "g:Profiler"
+
+        for col in ["adj_p", "combined_score", "odds_ratio", "overlap", "overlap_genes"]:
+            if col not in gtmp.columns:
+                gtmp[col] = None
+
+        gtmp = gtmp.sort_values("p_value", ascending=True).head(10)
+        frames.append(gtmp[["source", "term", "p_value", "adj_p", "combined_score", "odds_ratio", "overlap", "overlap_genes"]])
+
+    if not frames:
+        print("[WARN] No hay resultados para resumir.")
+        return
+
+    summary_df = pd.concat(frames, ignore_index=True)
+    out_path = f"{out_prefix}_resumen.tsv"
+    summary_df.to_csv(out_path, sep="\t", index=False)
+    print(f"[OK] Guardado resumen integrado en: {out_path}")
 
 def main():
     # Definición de argumentos
@@ -230,12 +275,15 @@ def main():
         print(f"[OK] Guardado mapeo en: {mapping_path}")
 
     # 5. Enriquecimiento (usando los símbolos normalizados)
-    run_enrichr(genes_fixed, out_prefix)
+    enrichr_results = run_enrichr(genes_fixed, out_prefix)
 
     # 6. Enriquecimiento con g:Profiler
-    run_gprofiler(genes_fixed, out_prefix)
+    gprof_df = run_gprofiler(genes_fixed, out_prefix)
 
-    print("[OK] Etapa v0.4 completada.")
+    # 7. Resumen
+    make_summary(enrichr_results, gprof_df, out_prefix)
+
+    print("[OK] Versión final completada.")
 
 if __name__ == "__main__":
     main()
