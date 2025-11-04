@@ -7,6 +7,18 @@ import pandas as pd
 
 import mygene
 
+from gseapy import enrichr
+
+#Librerias de Enrichr
+
+ENRICHR_LIBRARIES = [
+    "GO_Biological_Process_2023",
+    "GO_Molecular_Function_2023",
+    "GO_Cellular_Component_2023",
+    "KEGG_2021_Human",
+    "Reactome_2022",
+]
+
 # Sinónimos de genes mitocondriales habituales:
 MITO_SYNONYMS = {
     "ND1": "MT-ND1",
@@ -94,6 +106,50 @@ def map_genes_with_mygene(genes: List[str]) -> pd.DataFrame:
     df = df[wanted].drop_duplicates()
     return df
 
+def run_enrichr(gene_symbols: List[str], out_prefix: str) -> None:
+    print("[INFO] Ejecutando enriquecimiento con Enrichr")
+    for lib in ENRICHR_LIBRARIES:
+        try:
+            enr = enrichr(
+                gene_list=gene_symbols,
+                gene_sets=[lib],
+                organism="Human",
+                cutoff=1.0,
+            )
+
+            if enr.results is None or enr.results.empty:
+                print("[WARN] Enrichr no devolvió resultados para {lib}")
+                continue
+
+            df_res = enr.results.copy()
+
+            rename_map = {
+                "Term": "term",
+                "Adjusted P-value": "adj_p",
+                "P-value": "p_value",
+                "Odds Ratio": "odds_ratio",
+                "Combined Score": "combined_score",
+                "Genes": "overlap_genes",
+                "Overlap": "overlap",
+            }
+
+            for old, new in rename_map.items():
+                if old in df_res.columns:
+                    df_res.rename(columns={old: new}, inplace=True)
+
+            if "adj_p" in df_res.columns:
+                df_res = df_res.sort_values("adj_p", ascending=True)
+            elif "p_value" in df_res.columns:
+                df_res = df_res.sort_values("p_value", ascending=True)
+
+            out_path = f"{out_prefix}_enrichr_{lib}.tsv"
+            df_res.to_csv(out_path, sep="\t", index=False)
+            print(f"[OK] Guardado enriquecimiento de {lib} en: {out_path}")
+
+        except Exception as e:
+            print(f"[WARN] Fallo al consultar {lib} en Enrichr: {e}", file=sys.stderr)
+            continue
+
 def main():
     # Definición de argumentos
     # Archivo de entrada y prefijo de salida
@@ -148,7 +204,10 @@ def main():
         mapping_df.to_csv(mapping_path, sep="\t", index=False)
         print(f"[OK] Guardado mapeo en: {mapping_path}")
 
-    print("[OK] Etapa v0.2 completada.")
+    # 5. Enriquecimiento (usando los símbolos normalizados)
+    run_enrichr(genes_fixed, out_prefix)
+
+    print("[OK] Etapa v0.3 completada.")
 
 if __name__ == "__main__":
     main()
