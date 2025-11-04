@@ -5,9 +5,9 @@
 
 El análisis funcional de genes es una etapa fundamental en bioinformática y biología molecular que busca interpretar el papel biológico de uno o varios genes dentro de la célula. 
 
-Su objetivo principañ es pasar de una lista de genes a una comprensión de los procesos biológicos, rutas metabólicas y funciones moleculares en los que esos genes participan.
+Su objetivo principal es pasar de una lista de genes a una comprensión de los procesos biológicos, rutas metabólicas y funciones moleculares en los que esos genes participan.
 
-En definitiva, el análisis funcional transforma datos genómicos en conocimiento biológico interpretables, ayudando a contextualizar los genes dentro de las vías metabólicas, procesos fisiológicos y mecanismos molesculares del organismo.
+En definitiva, el análisis funcional transforma datos genómicos en conocimiento biológico interpretables, ayudando a contextualizar los genes dentro de las vías metabólicas, procesos fisiológicos y mecanismos moleculares del organismo.
 
 ## Contexto biológico
 
@@ -25,9 +25,9 @@ En esta tarea se analizarán tres genes mitocondriales y nucleares que están es
 Para ello se han llevado a cabo los siguientes pasos:
 
 1. **Lectura del archivo de entrada.**
-    * Se ignoran las líneas vacías y comentarios (líneas que empeizan por #)
+    * Se ignoran las líneas vacías y comentarios (líneas que empiezan por #)
 2. **Normalización heurística.**
-    * Los genes mitocondriales se renombran con su forma entándar en humano (p. ej. ND1 -> MT-ND1, ATP6 -> MT-ATP6), según el diccionario `MITO_SYNONYMS` definido en el script.
+    * Los genes mitocondriales se renombran con su forma estándar en humano (p. ej. ND1 -> MT-ND1, ATP6 -> MT-ATP6), según el diccionario `MITO_SYNONYMS` definido en el script.
 3. **Exportación de resultados.**
     * Se genera un archivo .tsv con dos columnas; `gene_input` (el nombre original del gen) y `gene_normalized`(el símbolo normalizado).
     * El archivo se guarda automáticamente en la carpeta `results/`.
@@ -62,7 +62,7 @@ En esta segunda etapa del script, después de normalizar los genes, consulta el 
 * Identificador Ensembl (`ensembl_gene`)
 * Si el gen no se pudo mapear
 
-El resultado se guarda en una rchivo TSV llamado, por ejemplo:
+El resultado se guarda en un archivo TSV llamado, por ejemplo:
 
 ```
 results/analisis_cox_nd1_atp6_mapping.tsv
@@ -74,7 +74,7 @@ Este archivo será la base para las etapas de enriquecimiento funcional.
 
 Una vez los genes están normalizados y mapeados queremos saber en qué procesos aparecen estos genes más de lo esperado. Para averiguarlo, utilizamos un análisis de enriquecimiento funcional. Esta es una técnica bioinformática que identifica qué procesos biológicos o funciones están sobrerrepresentados en una lista de genes, proteínas u otras moléculas.
 
-En este caso usamos **Enrichr** a través de la libería de Python `gseapy`. Enrichr es un servicio que tiene colecciones de genes ya agrupadas en categorías biológicas. Nosotros consultaremos:
+En este caso usamos **Enrichr** a través de la librería de Python `gseapy`. Enrichr es un servicio que tiene colecciones de genes ya agrupadas en categorías biológicas. Nosotros consultaremos:
 
 * `GO_Biological_Process_2023`
 * `GO_Molecular_Function_2023`
@@ -87,7 +87,7 @@ Para cada una de estas colecciones, el script:
 1. Envía la lista de genes.
 2. Recibe las categorías enriquecidas.
 3. Las ordena por significación.
-4. Guarda un archivo .tsv por coleccion en la carpeta `results`.
+4. Guarda un archivo .tsv por colección en la carpeta `results`.
 
 ## Enriquecimiento con g:Profiler
 
@@ -97,4 +97,31 @@ En esta estapa, el script:
 
 1. Usa la lista de símbolos ya normalizados.
 2. Llama a g:Profiler para el organismo humano.
-3. Guarda el resultado en un archivo .tsv.
+3. Guarda el resultado en:
+
+```
+results/analisis_cox_nd1_atp6_gprofiler.tsv
+```
+
+## Resumen integrador de resultados
+
+Para facilitar la interpretación, el script combina los resultados más relevantes de Enrichr y g:Profiler en un único archivo resumen:
+
+```
+results/analisis_cox_nd1_atp6_resumen.tsv
+```
+
+Este resumen incluye los términos más significativos de cada fuente, ordenados por su valor p o valor p ajustado, permitiendo comparar rápidamente las categorías comunes.
+
+## Conclusiones y referencias
+
+El análisis confirma que los genes COX4I2, ND1 y ATP6 están asociados a procesos de fosforilación oxidativa y respiración mitocondrial, concordando con su función conocida en la cadena transportadora de electrones.
+
+**Bases de datos y recursos utilizados:**
+
+*https://mygene.info/*
+*https://maayanlab.cloud/Enrichr/*
+*https://biit.cs.ut.ee/gprofiler/*
+*https://geneontology.org/*
+*https://www.genome.jp/kegg/*
+*https://reactome.org/*
