@@ -88,3 +88,13 @@ Para cada una de estas colecciones, el script:
 2. Recibe las categorías enriquecidas.
 3. Las ordena por significación.
 4. Guarda un archivo .tsv por coleccion en la carpeta `results`.
+
+## Enriquecimiento con g:Profiler
+
+A pesar de que Enrichr suele ser suficiente, las listas de genes suelen ser cortas o alguna de las colecciones no están disponibles. Para estos casos se usa la herramienta **g:Profiler**, usando la librería `gprofiler-official`. Esta herramienta permite anotar la lista de genes frente a varias bases de datos y devuelve una tabla con los términos significativos ordenados por el valor p. 
+
+En esta estapa, el script:
+
+1. Usa la lista de símbolos ya normalizados.
+2. Llama a g:Profiler para el organismo humano.
+3. Guarda el resultado en un archivo .tsv.
