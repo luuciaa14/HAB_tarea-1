@@ -2,3 +2,4 @@ pandas>=2.2
 numpy>=1.26
 mygene>=3.2
 gseapy>=1.1.3
+gprofiler-official>=1.0.0
